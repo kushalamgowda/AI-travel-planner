@@ -50,8 +50,26 @@ Make the itinerary realistic, engaging, and well-balanced. Include specific attr
       ...itineraryData,
       mapUrl,
     })
-  } catch (error) {
+  } catch (error: any) {
     console.error("[v0] Error generating itinerary:", error)
-    return Response.json({ error: "Failed to generate itinerary" }, { status: 500 })
+
+    if (error?.message?.includes("credit card")) {
+      return Response.json(
+        {
+          error: "AI Gateway Setup Required",
+          message:
+            "The AI Gateway requires a credit card on file. Please add a card at vercel.com/ai to unlock free credits, or set up your own OpenAI API key as OPENAI_API_KEY in your environment variables.",
+        },
+        { status: 402 },
+      )
+    }
+
+    return Response.json(
+      {
+        error: "Failed to generate itinerary",
+        message: error?.message || "An unexpected error occurred",
+      },
+      { status: 500 },
+    )
   }
 }
