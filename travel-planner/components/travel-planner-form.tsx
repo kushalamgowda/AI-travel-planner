@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { MapPin, Calendar, Users, Loader2 } from "lucide-react"
+import { MapPin, Calendar, Users, Loader2, AlertCircle } from "lucide-react"
 import { TravelResults } from "@/components/travel-results"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export function TravelPlannerForm() {
   const [destination, setDestination] = useState("")
@@ -17,10 +18,13 @@ export function TravelPlannerForm() {
   const [budget, setBudget] = useState("")
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<any>(null)
+  const [error, setError] = useState<{ title: string; message: string } | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError(null)
+    setResults(null)
 
     try {
       const response = await fetch("/api/generate-itinerary", {
@@ -30,9 +34,21 @@ export function TravelPlannerForm() {
       })
 
       const data = await response.json()
-      setResults(data)
+
+      if (!response.ok) {
+        setError({
+          title: data.error || "Error",
+          message: data.message || "Failed to generate itinerary. Please try again.",
+        })
+      } else {
+        setResults(data)
+      }
     } catch (error) {
       console.error("[v0] Error generating itinerary:", error)
+      setError({
+        title: "Network Error",
+        message: "Unable to connect to the server. Please check your connection and try again.",
+      })
     } finally {
       setLoading(false)
     }
@@ -140,6 +156,14 @@ export function TravelPlannerForm() {
           </form>
         </CardContent>
       </Card>
+
+      {error && (
+        <Alert variant="destructive" className="border-destructive/50 bg-destructive/10">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>{error.title}</AlertTitle>
+          <AlertDescription className="mt-2 leading-relaxed">{error.message}</AlertDescription>
+        </Alert>
+      )}
 
       {results && <TravelResults results={results} />}
     </div>
